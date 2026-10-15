@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.pytest_cache/
+# Images and model weights are too large for git; metadata.csv is kept
+data/real/*
+data/fake/*
+data/masks/*
+!data/**/.gitkeep
+checkpoints/*
+!checkpoints/.gitkeep
+features/
+wandb/

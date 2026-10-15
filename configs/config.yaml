@@ -1,0 +1,96 @@
+# ClaimGuard central config: every script reads from here so experiments are reproducible.
+# Paper references (e.g. [TAP]) point to docs/research_basis.md.
+
+seed: 42
+
+paths:
+  data_root: data
+  real_dir: data/real # real camera photos (label 0)
+  fake_dir: data/fake # AI images (label 1), one subfolder per generator
+  mask_dir: data/masks # inpainting masks (ground truth for Step 10)
+  raw_real_dir: data/raw_real # downloaded datasets before cleaning (git-ignored)
+  metadata_csv: data/metadata.csv
+  figures_dir: reports/figures
+  checkpoints_dir: checkpoints
+  features_dir: features # cached backbone embeddings (Step 5)
+
+splits:
+  train: 0.70
+  val: 0.15
+  test: 0.15
+  # Whole generator kept out of train/val, used only for the generalisation test (Step 8).
+  # FLUX is a rectified-flow transformer, a different family from everything we train on.
+  holdout_generator: flux
+
+image:
+  size: 224
+
+evaluation:
+  headline_metric: roc_auc # same ranking metric as the NTIRE 2026 challenge [NTIRE]
+  target_fpr: 0.05 # business operating point: at most 5% honest photos flagged
+
+# ---------- Step 2: dataset ----------
+ingest:
+  min_side: 256 # drop thumbnails smaller than this
+  dedup_hash_distance: 4 # perceptual-hash distance below which two photos count as duplicates
+
+# Generators chosen for DIVERSITY of architecture families, not volume [PROBE].
+# Folder name = data/fake/<key>/. Keys ending in "_inpaint" are edits of real photos.
+generators:
+  sd15:
+    {
+      family: unet_latent_diffusion,
+      mode: text2img,
+      model_id: stable-diffusion-v1-5/stable-diffusion-v1-5,
+      n: 1000,
+    }
+  sdxl:
+    {
+      family: unet_latent_diffusion_xl,
+      mode: text2img,
+      model_id: stabilityai/stable-diffusion-xl-base-1.0,
+      n: 800,
+    }
+  pixart_sigma:
+    {
+      family: diffusion_transformer,
+      mode: text2img,
+      model_id: PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,
+      n: 800,
+    }
+  sd15_inpaint:
+    {
+      family: unet_latent_diffusion,
+      mode: inpaint,
+      model_id: stable-diffusion-v1-5/stable-diffusion-inpainting,
+      n: 1000,
+    }
+  sdxl_inpaint:
+    {
+      family: unet_latent_diffusion_xl,
+      mode: inpaint,
+      model_id: diffusers/stable-diffusion-xl-1.0-inpainting-0.1,
+      n: 600,
+    }
+  flux: {
+      family: rectified_flow_transformer,
+      mode: text2img,
+      model_id: black-forest-labs/FLUX.1-schnell,
+      n: 400,
+    } # HOLD-OUT
+
+# ---------- Step 5: frozen foundation-model benchmark [TAP] ----------
+# All loaded with timm. Each is frozen; we train only a linear classifier on its features.
+backbones:
+  clip_l14: vit_large_patch14_clip_224.openai # baseline used by most papers (2021)
+  dinov2_l14: vit_large_patch14_dinov2.lvd142m # self-supervised, strong on fine textures (2023)
+  dinov3_l16: vit_large_patch16_dinov3.lvd1689m # newer self-supervised model (2025)
+  siglip2_l16: vit_large_patch16_siglip_256.v2_webli # image-text model, newer than CLIP (2025)
+  pe_core_l14: vit_pe_core_large_patch14_336.fb # Perception Encoder, best in [TAP] (2025)
+
+# ---------- Steps 4 and 8: real-world transformations [NTIRE] ----------
+robustness:
+  jpeg_quality: [95, 75, 50]
+  resize_scale: [0.75, 0.5]
+  blur_sigma: [1.0, 2.0]
+  crop_fraction: [0.8]
