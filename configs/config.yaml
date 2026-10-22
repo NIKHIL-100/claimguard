@@ -32,7 +32,19 @@ evaluation:
 # ---------- Step 2: dataset ----------
 ingest:
   min_side: 256 # drop thumbnails smaller than this
-  dedup_hash_distance: 4 # perceptual-hash distance below which two photos count as duplicates
+  dedup_hash_distance: 4 # perceptual-hash distance at or below which two photos count as duplicates
+  inpaint_min_side: 512 # real photos this large (VehiDE only) can be inpainting sources in Step 2.4
+  manifest_csv: data/real_manifest.csv
+  # Real-photo sources on Kaggle. "exclude" skips folders whose path contains that text.
+  real_sources:
+    - prefix: vehide
+      root: /kaggle/input/datasets/hendrichscullen/vehide-dataset-automatic-vehicle-damage-detection
+      exclude: []
+      inpaint_source: true
+    - prefix: hitl
+      root: /kaggle/input/datasets/humansintheloop/car-parts-and-car-damages
+      exclude: [masks] # masks_human / masks_machine are segmentation masks, not photos
+      inpaint_source: false # median shortest side ~480 px: too small for 512 px inpainting
 
 # Generators chosen for DIVERSITY of architecture families, not volume [PROBE].
 # Folder name = data/fake/<key>/. Keys ending in "_inpaint" are edits of real photos.
