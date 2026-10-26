@@ -29,6 +29,20 @@ def test_prompts_are_short():
     assert max(len(p["prompt"].split()) for p in make_prompts(1000)) <= 40
 
 
+def test_close_ups_make_the_damage_the_subject():
+    # The damaged part must come BEFORE the car, so models frame the damage, not the whole car.
+    for p in make_prompts(300):
+        if p["framing"] == "close-up":
+            text = p["prompt"]
+            assert text.index(p["part"]) < text.index(p["car_type"]), text
+
+
+def test_modern_make_is_named():
+    from src.prompts import CAR_MAKES
+    for p in make_prompts(300):
+        assert any(m in p["prompt"] for m in CAR_MAKES), p["prompt"]
+
+
 def test_prompts_are_varied():
     prompts = [p["prompt"] for p in make_prompts(1000)]
     assert len(set(prompts)) >= 990
