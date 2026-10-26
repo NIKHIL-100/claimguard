@@ -12,8 +12,9 @@ Design (interview points):
    is atomic, so a half-written PNG can never be mistaken for a finished one.
 4. LOGGED: data/fake/<generator>/log.csv records prompt, seed, settings and seconds for
    every image, so the dataset is documented and auditable.
-5. MEMORY-SAFE: PixArt-Sigma and FLUX peaked at 14.9 / 15.4 GB of a 15.8 GB T4 in the smoke
-   tests, so they use CPU offloading or 4-bit weights plus tiled VAE decoding.
+5. MEMORY: FLUX runs with 4-bit weights and tiled VAE decoding (peak 15.4 GB of a 15.8 GB
+   T4 before tiling). PixArt-Sigma fits fully on the GPU (peak 14.9 GB); CPU offloading
+   was measured and rejected because it doubled the time per image.
 
 Images are saved as lossless PNG. Compression is applied identically to real and fake
 images later (Step 4), so the file format cannot become a shortcut.
@@ -128,11 +129,11 @@ def build_generate_fn(generator: str, gcfg: dict, device: str) -> Callable[[dict
         extra = {}
     elif generator == "pixart_sigma":
         from diffusers import PixArtSigmaPipeline
+        # Fully on the GPU (peak 14.9 GB of 15.8 GB in the smoke test, constant per image).
+        # CPU offloading was tried in the quick check: it moved the 9.5 GB T5 encoder to the
+        # GPU and back for every image and doubled the time (41 s vs 21 s per image).
         pipe = PixArtSigmaPipeline.from_pretrained(
-            gcfg["model_id"], dtype=fp16)
-        # Model offload keeps each part on the CPU until it is needed: the 9.5 GB T5 encoder
-        # visits the GPU only to read the prompt, which leaves room for the transformer.
-        pipe.enable_model_cpu_offload(gpu_id=gpu_id)
+            gcfg["model_id"], dtype=fp16).to(device)
         extra = {"clean_caption": False}
     elif generator == "flux":
         from diffusers import FluxPipeline
