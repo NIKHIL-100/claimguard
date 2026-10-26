@@ -50,4 +50,4 @@ def test_prompts_are_varied():
 
 def test_framing_mix_matches_plan():
     counts = Counter(p["framing"] for p in make_prompts(2000))
-    assert 0.45 < counts["close-up"] / 2000 < 0.55
+    assert 0.15 < counts["close-up"] / 2000 < 0.25

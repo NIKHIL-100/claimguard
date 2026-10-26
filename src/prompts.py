@@ -51,8 +51,9 @@ DAMAGES = [
     ("chipped paint", "door edge"),
 ]
 
-# Weights follow the real data: VehiDE is mostly close-up inspection photos.
-FRAMINGS = {"close-up": 0.5, "medium shot": 0.3, "wide shot": 0.2}
+# Text-to-image models turn close-ups into abstract textures (Step 2.3c, prompts v2), so
+# realistic close-up fakes come from INPAINTING real close-ups instead (Step 2.4).
+FRAMINGS = {"close-up": 0.2, "medium shot": 0.5, "wide shot": 0.3}
 STYLES = ["amateur phone photo", "smartphone photo", "phone photo"]
 SCENES = [
     "in a car repair garage", "in a garage with a tiled floor", "parked on a city street",
@@ -61,8 +62,8 @@ SCENES = [
 ]
 LIGHTING = ["daylight", "overcast daylight",
             "fluorescent light", "evening light"]
-# assessor marks, as in VehiDE
-EXTRAS = {"blue marker pen marks around the damage": 0.2}
+# Assessor pen marks were drawn as giant blue circles; inpainted fakes keep the real marks.
+EXTRAS: dict[str, float] = {}
 
 NEGATIVE = ("cartoon, illustration, painting, 3d render, cgi, studio lighting, professional photo, "
             "glossy, oversaturated, vintage car, classic car, watermark, text, logo, blurry, deformed car")
