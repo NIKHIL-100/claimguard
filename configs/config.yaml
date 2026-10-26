@@ -47,49 +47,63 @@ ingest:
       inpaint_source: false # median shortest side ~480 px: too small for 512 px inpainting
 
 # Generators chosen for DIVERSITY of architecture families, not volume [PROBE].
-# Folder name = data/fake/<key>/. Keys ending in "_inpaint" are edits of real photos.
+# Folder name = data/fake/<key>/. Keys ending in "_inpaint" are edits of real photos (Step 2.4).
+# Settings come from the Kaggle smoke tests (Steps 2.3a-d, Tesla T4, fp16).
+#   n_keep     = images we want after the relevance filter
+#   n_generate = images to generate (extra buffer, because the filter removes off-topic images)
 generators:
-  sd15:
-    {
-      family: unet_latent_diffusion,
-      mode: text2img,
-      model_id: stable-diffusion-v1-5/stable-diffusion-v1-5,
-      n: 1000,
-    }
-  sdxl:
-    {
-      family: unet_latent_diffusion_xl,
-      mode: text2img,
-      model_id: stabilityai/stable-diffusion-xl-base-1.0,
-      n: 800,
-    }
-  pixart_sigma:
-    {
-      family: diffusion_transformer,
-      mode: text2img,
-      model_id: PixArt-alpha/PixArt-Sigma-XL-2-1024-MS,
-      n: 800,
-    }
-  sd15_inpaint:
-    {
-      family: unet_latent_diffusion,
-      mode: inpaint,
-      model_id: stable-diffusion-v1-5/stable-diffusion-inpainting,
-      n: 1000,
-    }
-  sdxl_inpaint:
-    {
-      family: unet_latent_diffusion_xl,
-      mode: inpaint,
-      model_id: diffusers/stable-diffusion-xl-1.0-inpainting-0.1,
-      n: 600,
-    }
-  flux: {
-      family: rectified_flow_transformer,
-      mode: text2img,
-      model_id: black-forest-labs/FLUX.1-schnell,
-      n: 400,
-    } # HOLD-OUT
+  sd15: # UNet latent diffusion (2022). ~6 s/image on a T4
+    family: unet_latent_diffusion
+    mode: text2img
+    model_id: stable-diffusion-v1-5/stable-diffusion-v1-5
+    width: 640
+    height: 480
+    steps: 30
+    guidance: 6.0
+    n_keep: 1000
+    n_generate: 1350
+  sdxl: # larger UNet latent diffusion (2023). ~21 s/image
+    family: unet_latent_diffusion_xl
+    mode: text2img
+    model_id: stabilityai/stable-diffusion-xl-base-1.0
+    width: 1024
+    height: 768
+    steps: 30
+    guidance: 6.0
+    n_keep: 1000
+    n_generate: 1350
+  pixart_sigma: # diffusion transformer with a T5 text encoder (2024). ~21 s/image
+    family: diffusion_transformer
+    mode: text2img
+    model_id: PixArt-alpha/PixArt-Sigma-XL-2-1024-MS
+    width: 1024
+    height: 768
+    steps: 20
+    guidance: 4.5
+    n_keep: 1000
+    n_generate: 1350
+  flux: # HOLD-OUT. Rectified-flow transformer (2024), 4-bit quantised. ~16 s/image
+    family: rectified_flow_transformer
+    mode: text2img
+    model_id: black-forest-labs/FLUX.1-schnell # gated: accept the terms on Hugging Face first
+    width: 1024
+    height: 768
+    steps: 4
+    guidance: 0.0
+    n_keep: 600
+    n_generate: 810
+  sd15_inpaint: # Step 2.4: edits of real close-ups
+    family: unet_latent_diffusion
+    mode: inpaint
+    model_id: stable-diffusion-v1-5/stable-diffusion-inpainting
+    n_keep: 1200
+    n_generate: 1400
+  sdxl_inpaint: # Step 2.4: edits of real close-ups
+    family: unet_latent_diffusion_xl
+    mode: inpaint
+    model_id: diffusers/stable-diffusion-xl-1.0-inpainting-0.1
+    n_keep: 800
+    n_generate: 950
 
 # ---------- Step 5: frozen foundation-model benchmark [TAP] ----------
 # All loaded with timm. Each is frozen; we train only a linear classifier on its features.
