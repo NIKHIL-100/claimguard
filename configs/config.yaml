@@ -92,18 +92,35 @@ generators:
     guidance: 0.0
     n_keep: 600
     n_generate: 810
-  sd15_inpaint: # Step 2.4: edits of real close-ups
+  sd15_inpaint: # Step 2.4: edits of real close-ups. Native 512 px, so the window is not resized
     family: unet_latent_diffusion
     mode: inpaint
     model_id: stable-diffusion-v1-5/stable-diffusion-inpainting
+    model_res: 512 # the model's working resolution
+    window: 512 # square crop of the real photo around the edit
+    steps: 30
+    guidance: 7.5
+    strength: 0.99 # how much of the masked region is repainted (1.0 = fully)
     n_keep: 1200
     n_generate: 1400
-  sdxl_inpaint: # Step 2.4: edits of real close-ups
+  sdxl_inpaint: # Step 2.4: edits of real close-ups. Window = min(1024, shortest side), resized to 1024
     family: unet_latent_diffusion_xl
     mode: inpaint
     model_id: diffusers/stable-diffusion-xl-1.0-inpainting-0.1
+    model_res: 1024
+    window: 1024
+    steps: 25
+    guidance: 7.5
+    strength: 0.99
     n_keep: 800
     n_generate: 950
+
+# Step 2.4: how inpainted fakes are made (src/inpaint.py)
+inpainting:
+  mask_area: [0.03, 0.15] # edited area as a fraction of the window, like real damage in a close-up
+  streak_share: 0.4 # share of long thin masks (scratches); the rest are blobs (dents, cracks)
+  feather_px: 3 # soften the paste-back edge so there is no hard seam
+  top_band_frac: 0.12 # never edit the top 12% of a photo: that is where the timestamp overlay sits
 
 # ---------- Step 5: frozen foundation-model benchmark [TAP] ----------
 # All loaded with timm. Each is frozen; we train only a linear classifier on its features.
