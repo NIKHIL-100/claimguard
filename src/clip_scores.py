@@ -151,14 +151,18 @@ def score_images(df: pd.DataFrame, cfg: dict, device: str, batch_size: int = 128
         text = model.encode_text(tokenizer(all_prompts).to(device)).float()
         text = text / text.norm(dim=-1, keepdim=True)
 
-    sims = []
+    feats = []
     loader = DataLoader(Images(), batch_size=batch_size, num_workers=workers)
-    with torch.no_grad(), torch.autocast("cuda", dtype=torch.float16, enabled=device.startswith("cuda")):
+    with torch.no_grad():
         for x in tqdm(loader, desc="CLIP"):
-            f = model.encode_image(x.to(device)).float()
-            f = f / f.norm(dim=-1, keepdim=True)
-            sims.append((f @ text.T).cpu().numpy())
-    sims = np.concatenate(sims)
+            # fp16 only inside the image encoder (speed); everything after it in float32
+            with torch.autocast("cuda", dtype=torch.float16, enabled=device.startswith("cuda")):
+                f = model.encode_image(x.to(device))
+            feats.append(f.float().cpu().numpy())
+    feats = np.concatenate(feats).astype(np.float64)
+    feats /= np.linalg.norm(feats, axis=1, keepdims=True)
+    # cosine similarities, float64
+    sims = feats @ text.cpu().numpy().astype(np.float64).T
 
     out = df.copy()
     start = 0

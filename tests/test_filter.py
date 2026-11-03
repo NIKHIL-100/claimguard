@@ -20,6 +20,11 @@ def test_group_probs_is_a_probability_and_follows_similarity():
     assert p[0] > 0.99 and p[1] < 0.01 and p[2] == pytest.approx(1 / 3)
 
 
+def test_config_has_every_filter_setting():
+    assert set(CFG["filter"]) >= {
+        "clip_model", "clip_pretrained", "real_quantile", "scores_csv", "selection_csv"}
+
+
 def test_every_question_has_positive_and_negative_prompts():
     for q, (pos, neg) in PROMPTS.items():
         assert pos and neg, q
