@@ -101,7 +101,7 @@ generators:
     steps: 30
     guidance: 7.5
     strength: 0.99 # how much of the masked region is repainted (1.0 = fully)
-    n_keep: 1200
+    n_keep: 1400 # all kept: sources are real damage photos, so on-topic by construction
     n_generate: 1400
   sdxl_inpaint: # Step 2.4: edits of real close-ups. Window = min(1024, shortest side), resized to 1024
     family: unet_latent_diffusion_xl
@@ -112,7 +112,7 @@ generators:
     steps: 25
     guidance: 7.5
     strength: 0.99
-    n_keep: 800
+    n_keep: 950 # all kept (see sd15_inpaint)
     n_generate: 950
 
 # Step 2.4: how inpainted fakes are made (src/inpaint.py)
@@ -121,6 +121,14 @@ inpainting:
   streak_share: 0.4 # share of long thin masks (scratches); the rest are blobs (dents, cracks)
   feather_px: 3 # soften the paste-back edge so there is no hard seam
   top_band_frac: 0.12 # never edit the top 12% of a photo: that is where the timestamp overlay sits
+
+# Step 2.5: relevance filter for text-to-image fakes (src/clip_scores.py, src/select_fakes.py)
+filter:
+  clip_model: ViT-B-32 # small CLIP, deliberately NOT the ViT-L/14 benchmarked as a detector in Step 5
+  clip_pretrained: openai
+  real_quantile: 0.05 # a fake must look at least as "car" and "damaged" as 95% of real photos
+  scores_csv: data/clip_scores.csv
+  selection_csv: data/fake_selection.csv
 
 # ---------- Step 5: frozen foundation-model benchmark [TAP] ----------
 # All loaded with timm. Each is frozen; we train only a linear classifier on its features.
