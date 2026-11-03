@@ -22,7 +22,7 @@ def test_group_probs_is_a_probability_and_follows_similarity():
 
 def test_config_has_every_filter_setting():
     assert set(CFG["filter"]) >= {
-        "clip_model", "clip_pretrained", "real_quantile", "scores_csv", "selection_csv"}
+        "clip_model", "clip_pretrained", "car_threshold", "real_quantile", "scores_csv", "selection_csv"}
 
 
 def test_every_question_has_positive_and_negative_prompts():
@@ -92,8 +92,8 @@ def test_thresholds_come_from_reals_and_fakes_below_are_rejected():
     scores = synthetic_scores()
     sel, t = select_fakes(scores, cfg_with_keep(20))
     reals = scores[scores["label"] == 0]
-    assert t["car"] == pytest.approx(reals["p_car"].quantile(0.05))
-
+    assert t["car"] == CFG["filter"]["car_threshold"]
+    assert t["damage"] == pytest.approx(reals["p_damage"].quantile(0.05))
     sd15 = sel[sel["generator"] == "sd15"]
     kept = sd15[sd15["keep"]]
     assert len(kept) == 20

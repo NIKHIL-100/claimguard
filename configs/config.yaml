@@ -126,7 +126,11 @@ inpainting:
 filter:
   clip_model: ViT-B-32-quickgelu # small CLIP (quickgelu = the activation OpenAI trained it with), NOT the ViT-L/14 benchmarked in Step 5
   clip_pretrained: openai
-  real_quantile: 0.05 # a fake must look at least as "car" and "damaged" as 95% of real photos
+  car_threshold:
+    0.5 # fixed: CLIP must find "car" more likely than all non-car prompts together.
+    # (The 5% real quantile was 0.985: real photos all score ~1.0, so it rejected
+    # ordinary whole-car images. Checked visually in the Step 2.5 grids.)
+  real_quantile: 0.05 # damage: a fake must look at least as damaged as 95% of real photos
   scores_csv: data/clip_scores.csv
   selection_csv: data/fake_selection.csv
 
